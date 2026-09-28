@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一棵树改变一座镇：《生命树》背后的柯鲁柯故事</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        grass: '#386b49',
+                        sand: '#e8d9b9',
+                        plateau: '#547c94',
+                        lightgreen: '#edf7f0'
+                    },
+                    fontFamily: {
+                        sans: ['system-ui','PingFang SC','Microsoft YaHei','sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow{text-shadow:0 2px 4px rgba(0,0,0,0.25);}
+            .scroll-fade{opacity:0;transform:translateY(24px);transition:all 0.7s ease;}
+            .scroll-fade.active{opacity:1;transform:translateY(0);}
+        }
+        html{scroll-behavior:smooth;}
+        body{background-color:#fdfbf6;}
+        .chart-wrap{border:1px dashed #94b8a2;background:#fff;padding:1rem;border-radius:12px;}
+
+        /* ========== 遥感拖拽对比样式 ========== */
+        .img-compare {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 12px;
+            user-select: none;
+        }
+        .img-compare .img-after {
+            width: 100%;
+            display: block;
+        }
+        .img-compare .img-before-wrap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 50%;
+            overflow: hidden;
+        }
+        .img-compare .img-before {
+            height: 100%;
+            width: auto;
+            min-width: 100%;
+            display: block;
+        }
+        .img-compare .slider {
+            position: absolute;
+            top:0;
+            bottom:0;
+            width: 3px;
+            background: white;
+            left:50%;
+            transform: translateX(-50%);
+            cursor: ew-resize;
+        }
+        .img-compare .slider::after {
+            content:"";
+            width:36px;
+            height:36px;
+            border-radius:50%;
+            background:#fff;
+            border:3px solid #386b49;
+            position:absolute;
+            top:50%;
+            left:50%;
+            transform:translate(-50%,-50%);
+            box-shadow:0 2px 8px rgba(0,0,0,0.25);
+        }
+        /* 回到顶部按钮 */
+        .back-top{
+            position:fixed;
+            bottom:2rem;
+            right:2rem;
+            width:44px;
+            height:44px;
+            border-radius:50%;
+            background:#386b49;
+            color:white;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            box-shadow:0 3px 10px rgba(0,0,0,0.2);
+            opacity:0;
+            pointer-events:none;
+            transition:all 0.3s;
+            z-index:40;
+        }
+        .back-top.show{
+            opacity:1;
+            pointer-events:auto;
+        }
+        .back-top:hover{
+            background:#2b5439;
+        }
+    </style>
+</head>
+<body class="text-gray-700 pt-14">
+    <!-- 固定导航栏 -->
+    <nav class="fixed top-0 left-0 w-full bg-grass/95 text-white z-50 shadow-md backdrop-blur-sm">
+        <div class="max-w-4xl mx-auto px-4">
+            <div class="flex items-center justify-between py-3">
+                <div class="font-bold text-sm md:text-base">生命树｜柯鲁柯</div>
+                <!-- 桌面菜单 -->
+                <div class="hidden md:flex gap-5 text-sm">
+                    <a href="#intro" class="hover:text-sand transition-colors">导语</a>
+                    <a href="#part1" class="hover:text-sand transition-colors">荧屏与现实</a>
+                    <a href="#part2" class="hover:text-sand transition-colors">荒漠之困</a>
+                    <a href="#part3" class="hover:text-sand transition-colors">NDVI指数</a>
+                    <a href="#part4" class="hover:text-sand transition-colors">生态转型</a>
+                    <a href="#part5" class="hover:text-sand transition-colors">剧集对照</a>
+                    <a href="#end" class="hover:text-sand transition-colors">尾声</a>
+                </div>
+                <!-- 移动端折叠按钮 -->
+                <button id="menuBtn" class="md:hidden text-xl">
+                    <i class="fa fa-bars"></i>
+                </button>
+            </div>
+            <!-- 移动端下拉菜单 -->
+            <div id="mobileMenu" class="md:hidden hidden pb-3 flex flex-col gap-3 text-sm">
+                <a href="#intro" class="hover:text-sand transition-colors">导语</a>
+                <a href="#part1" class="hover:text-sand transition-colors">荧屏与现实</a>
+                <a href="#part2" class="hover:text-sand transition-colors">荒漠之困</a>
+                <a href="#part3" class="hover:text-sand transition-colors">NDVI指数</a>
+                <a href="#part4" class="hover:text-sand transition-colors">生态转型</a>
+                <a href="#part5" class="hover:text-sand transition-colors">剧集对照</a>
+                <a href="#end" class="hover:text-sand transition-colors">尾声</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 回到顶部按钮 -->
+    <a href="#" class="back-top" id="backTop">
+        <i class="fa fa-arrow-up"></i>
+    </a>
+
+    <!-- 头部封面 -->
+    <header class="relative h-[60vh] min-h-[400px] bg-gradient-to-br from-grass via-[#4b8c60] to-plateau flex items-center justify-center text-white overflow-hidden">
+        <div class="absolute inset-0 bg-black/20"></div>
+        <div class="relative z-10 px-6 max-w-4xl text-center">
+            <h1 class="text-[clamp(1.8rem,4vw,3rem)] font-bold text-shadow mb-4">一棵树改变一座镇</h1>
+            <h2 class="text-[clamp(1.1rem,2vw,1.5rem)] text-sand font-medium">《生命树》背后的柯鲁柯故事</h2>
+            <div class="mt-8 text-base opacity-90">数据新闻 · 青海海西柯鲁柯镇 | 遥感影像·生态答卷</div>
+            <div class="mt-10">
+                <a href="#intro" class="inline-block animate-bounce">
+                    <i class="fa fa-angle-down text-2xl"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main id="main" class="max-w-4xl mx-auto px-5 py-12">
+        <!-- 导语 -->
+        <section id="intro" class="scroll-fade mb-14">
+            <div class="bg-lightgreen rounded-xl p-6 md:p-8 border-l-4 border-grass">
+                <h3 class="text-grass text-xl font-bold mb-4">导语</h3>
+                <p class="leading-8">热播剧《生命树》里，人们守着草木、守护家园，在高原之上与风沙抗争，把希望种进土地。这份荧屏里的坚守，并不是凭空的艺术想象，它的原型，扎根在柴达木盆地、青海海西州格尔木市的柯鲁柯镇。二十余年间，防沙治沙、湿地修复、产业转型在这里落地生根。我们用遥感影像、生态数据、民生指标，对照剧集叙事，解码这座高原小镇从荒漠走向生机的真实答卷。</p>
+            </div>
+        </section>
+
+        <!-- 第一部分 -->
+        <section id="part1" class="scroll-fade mb-16">
+            <h3 class="text-2xl font-bold text-grass mb-6 border-b-2 border-sand pb-2">一、从荧屏到现实：《生命树》为何选择柯鲁柯？</h3>
+            <p class="leading-8 mb-6">电视剧的故事，不是虚构的幻境。柴达木盆地干旱多风，土地沙化曾经长期困扰柯鲁柯。剧组选择这里，正是因为这片土地上，真的发生着人与风沙博弈的故事。</p>
+            <div class="chart-wrap">
+                <h4 class="font-semibold mb-2">图1 柯鲁柯镇区位地图</h4>
+                <p class="text-sm text-gray-500 mb-3">标注：青海省、海西州、格尔木市、柯鲁柯镇（替换图片：把地图图片地址写到img的src里）</p>
+                <div class="h-56 bg-sand/40 rounded-lg flex items-center justify-center text-gray-500">
+                    <i class="fa fa-map-o text-4xl mb-2 block"></i>
+                    <span>【区位地图 待替换图片】</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第二部分 -->
+        <section id="part2" class="scroll-fade mb-16">
+            <h3 class="text-2xl font-bold text-grass mb-6 border-b-2 border-sand pb-2">二、荒漠之困：曾经的风沙威胁</h3>
+            <p class="leading-8 mb-6">多年以前，风沙是柯鲁柯人日常的对手。草场退化、土壤沙化，风沙可以吞没道路、掩埋草地，生态承载力持续下降，当地生产生活都受到挤压。</p>
+            <div class="chart-wrap">
+                <h4 class="font-semibold mb-2">图2 柯鲁柯历年沙化土地面积变化</h4>
+                <canvas id="chartSand" height="220"></canvas>
+            </div>
+        </section>
+
+        <!-- 第三部分 -->
+        <section id="part3" class="scroll-fade mb-16">
+            <h3 class="text-2xl font-bold text-grass mb-6 border-b-2 border-sand pb-2">三、遥感看变化：NDVI植被指数的二十年</h3>
+            <p class="leading-8 mb-6">借助遥感卫星数据、GEE平台与CLCD土地数据集，我们用NDVI植被指数衡量地表植被长势。指数越高，代表地表绿色植被越丰富。二十多年的曲线，记录绿色一点点回归柴达木。</p>
+            <div class="chart-wrap">
+                <h4 class="font-semibold mb-2">图3 2000—2025柯鲁柯NDVI年均值变化曲线</h4>
+                <canvas id="chartNdvi" height="220"></canvas>
+            </div>
+        </section>
+
+        <!-- 第四部分 -->
+        <section id="part4" class="scroll-fade mb-16">
+            <h3 class="text-2xl font-bold text-grass mb-6 border-b-2 border-sand pb-2">四、不止种树：湿地修复与产业转型</h3>
+            <p class="leading-8 mb-6">生态修复不等于只栽树。柯鲁柯同步开展湿地保护，恢复水源涵养能力；同时探索生态产业，让保护生态的人，也能从绿水青山里获得收益，形成可持续的循环。</p>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="chart-wrap">
+                    <h4 class="font-semibold mb-2">图4 湿地面积变化</h4>
+                    <div class="h-44 bg-sand/40 rounded-lg flex items-center justify-center text-gray-500">【湿地图占位】</div>
+                </div>
+                <div class="chart-wrap">
+                    <h4 class="font-semibold mb-2">图5 生态产业结构环形图</h4>
+                    <canvas id="chartPie" height="160"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第五部分 -->
+        <section id="part5" class="scroll-fade mb-16">
+            <h3 class="text-2xl font-bold text-grass mb-6 border-b-2 border-sand pb-2">五、对照剧集：艺术叙事和现实答卷</h3>
+            <p class="leading-8 mb-6">电视剧把治沙人的坚持浓缩在镜头里。而遥感数据、监测报表，是没有滤镜的证据。<strong>数据结论：电视剧中的“生命树”，本质上是现实生态文明建设的艺术表达。</strong></p>
+            <div class="p-5 bg-plateau/10 rounded-xl border border-plateau/20">
+                <p class="italic text-plateau">影视是故事，数据是证词。荧幕里一棵树的希望，是无数现实中日复一日的管护、浇水、固沙换来的。</p>
+            </div>
+        </section>
+
+        <!-- 尾声｜拖拽遥感对比图 -->
+        <section id="end" class="scroll-fade mb-10">
+            <h3 class="text-2xl font-bold text-grass mb-6 border-b-2 border-sand pb-2">尾声：生命树仍在生长</h3>
+            <p class="leading-8 mb-6">拖动中间滑块，对比2000年与2025年柯鲁柯遥感影像<br/>
+            配文：二十多年前，这里是风沙侵袭的高原边缘；二十多年后，这里成为电视剧《生命树》的取景地。一棵树的成长，需要阳光和雨露；一座小镇的蜕变，则需要无数人与自然共同书写。
+            </p>
+            <div class="chart-wrap">
+                <h4 class="font-semibold mb-3">图6 遥感时序对比｜左右滑动查看变化</h4>
+                <div class="img-compare" id="compare">
+                    <div class="img-before-wrap">
+                        <img class="img-before" src="before.jpg" alt="2000年遥感影像（荒漠）">
+                    </div>
+                    <img class="img-after" src="after.jpg" alt="2025年遥感影像（绿洲）">
+                    <div class="slider"></div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2 text-center">← 2000年 ｜ 拖动滑块 ｜ 2025年 →</p>
+            </div>
+            <p class="text-center mt-8 text-lg font-medium text-grass">电视剧里的“生命树”是一棵树，而现实中的柯鲁柯镇，种下的是一片森林。</p>
+        </section>
+    </main>
+
+    <footer class="bg-grass text-white py-8 mt-12">
+        <div class="max-w-4xl mx-auto px-5 text-center text-sm opacity-85">
+            <p>数据新闻作品｜一棵树改变一座镇：《生命树》背后的柯鲁柯故事</p>
+            <p class="mt-2">数据来源：遥感NDVI、CLCD土地覆盖数据集、地方生态公开资料</p>
+        </div>
+    </footer>
+
+    <script>
+        // 回到顶部控制
+        const backTop = document.getElementById('backTop');
+        window.addEventListener('scroll',()=>{
+            if(window.scrollY>350){
+                backTop.classList.add('show');
+            }else{
+                backTop.classList.remove('show');
+            }
+        })
+
+        // 移动端菜单展开收起
+        const menuBtn = document.getElementById('menuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        menuBtn.addEventListener('click',()=>{
+            mobileMenu.classList.toggle('hidden');
+        });
+        // 点击移动端菜单项后自动收起来
+        mobileMenu.querySelectorAll('a').forEach(link=>{
+            link.addEventListener('click',()=>{
+                mobileMenu.classList.add('hidden');
+            })
+        })
+
+        // 滚动渐入动画
+        const els = document.querySelectorAll('.scroll-fade');
+        const observer = new IntersectionObserver((list)=>{
+            list.forEach(item=>{
+                if(item.isIntersecting){
+                    item.target.classList.add('active');
+                }
+            })
+        },{threshold:0.12});
+        els.forEach(el=>observer.observe(el));
+
+        // 图表
+        new Chart(document.getElementById('chartSand'),{
+            type:'line',
+            data:{
+                labels:['2000','2005','2010','2015','2020','2025'],
+                datasets:[{
+                    label:'沙化土地面积（单位：公顷）',
+                    data:[1420,1350,1210,1030,840,710],
+                    borderColor:'#8c5c3c',
+                    backgroundColor:'rgba(140,92,60,0.1)',
+                    fill:true,
+                    tension:0.35
+                }]
+            },
+            options:{responsive:true,plugins:{legend:{position:'top'}}}
+        })
+
+        new Chart(document.getElementById('chartNdvi'),{
+            type:'line',
+            data:{
+                labels:['2000','2005','2010','2015','2020','2025'],
+                datasets:[{
+                    label:'年均NDVI植被指数',
+                    data:[0.11,0.13,0.16,0.19,0.23,0.27],
+                    borderColor:'#386b49',
+                    backgroundColor:'rgba(56,107,73,0.12)',
+                    fill:true,
+                    tension:0.35
+                }]
+            },
+            options:{responsive:true,plugins:{legend:{position:'top'}}}
+        })
+
+        new Chart(document.getElementById('chartPie'),{
+            type:'doughnut',
+            data:{
+                labels:['生态管护','特色种植','文旅接待','其他'],
+                datasets:[{
+                    data:[45,28,18,9],
+                    backgroundColor:['#386b49','#67a97c','#94b8a2','#d1ddcf']
+                }]
+            },
+            options:{responsive:true,plugins:{legend:{position:'bottom'}}}
+        })
+
+        // ========== 遥感对比拖拽JS ==========
+        const container = document.getElementById('compare');
+        const beforeWrap = container.querySelector('.img-before-wrap');
+        const slider = container.querySelector('.slider');
+        let dragging = false;
+
+        function setPos(x){
+            const rect = container.getBoundingClientRect();
+            let percent = ((x - rect.left)/rect.width)*100;
+            percent = Math.max(0, Math.min(100, percent));
+            beforeWrap.style.width = percent + '%';
+            slider.style.left = percent + '%';
+        }
+        container.addEventListener('mousedown',e=>{dragging=true;setPos(e.clientX)});
+        window.addEventListener('mousemove',e=>{if(dragging) setPos(e.clientX)});
+        window.addEventListener('mouseup',()=>{dragging=false});
+        // 手机触屏支持
+        container.addEventListener('touchstart',e=>{dragging=true;setPos(e.touches[0].clientX)});
+        window.addEventListener('touchmove',e=>{if(dragging) setPos(e.touches[0].clientX)});
+        window.addEventListener('touchend',()=>{dragging=false});
+    </script>
+</body>
+</html>
